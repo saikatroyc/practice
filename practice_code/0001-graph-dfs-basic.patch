@@ -1,0 +1,264 @@
+From 4245ebac93ac3b381627802a029e7670ea8c691f Mon Sep 17 00:00:00 2001
+From: Saikat <saikat.royc85@gmail.com>
+Date: Tue, 10 Jul 2018 00:43:22 -0700
+Subject: [PATCH] graph dfs basic
+
+---
+ graphs/pytest/test.py       |   4 +-
+ graphs/utils/graph_defs.py  | 101 -------------------------------------
+ graphs/utils/graph_utils.py | 119 ++++++++++++++++++++++++++++++++++++++++++--
+ 3 files changed, 117 insertions(+), 107 deletions(-)
+ delete mode 100644 graphs/utils/graph_defs.py
+
+diff --git a/graphs/pytest/test.py b/graphs/pytest/test.py
+index ee9ebc5..ad4967c 100644
+--- a/graphs/pytest/test.py
++++ b/graphs/pytest/test.py
+@@ -1,4 +1,4 @@
+-from graphs.utils.graph_defs import GraphNode, Edge, Graph
++from graphs.utils.graph_utils import GraphNode, Edge, Graph
+ 
+ e1 = Edge('A', 'B')
+ e2 = Edge('B', 'C')
+@@ -8,3 +8,5 @@ e4 = Edge('D', 'A')
+ g = Graph([e1, e2, e3, e4])
+ g.print_vertices()
+ g.print_edges()
++
++g.dfs_basic('B')
+diff --git a/graphs/utils/graph_defs.py b/graphs/utils/graph_defs.py
+deleted file mode 100644
+index 0832b2a..0000000
+--- a/graphs/utils/graph_defs.py
++++ /dev/null
+@@ -1,101 +0,0 @@
+-class GraphNode(object):
+-    def __init__(self, key, val=None):
+-        self._key = key
+-        self._val = val
+-
+-    @property
+-    def key(self):
+-        return self._key
+-
+-    @property
+-    def val(self):
+-        return self._val
+-
+-    def __hash__(self):
+-        return hash(self._key)
+-
+-    def __str__(self):
+-        return "".join(["(", self._key, ",", self._val, ")"])
+-
+-class Edge(object):
+-    def __init__(self, from_vertex=None, to_vertex=None, is_directed=False):
+-        self._is_directed = is_directed
+-        self._from_vertex = from_vertex
+-        self._to_vertex = to_vertex
+-
+-    @property
+-    def from_vertex(self):
+-        return self._from_vertex
+-
+-    @property
+-    def to_vertex(self):
+-        return self._to_vertex
+-
+-    @property
+-    def directed(self):
+-        return self._is_directed
+-
+-    def __str__(self):
+-        return "".join(["(", self._from_vertex, ",", self._to_vertex, ")"])
+-
+-class Graph(object):
+-    def __init__(self, edges):
+-        self._vertices = {}
+-        # Map of vertex key to list of vertex nodes.
+-        self._adjacency_list = {}
+-        """
+-        List of Edge objects.
+-        """
+-        for edge in edges:
+-            from_vertex = GraphNode(edge.from_vertex)
+-            to_vertex = GraphNode(edge.to_vertex)
+-            if not self._vertices.has_key(from_vertex.key):
+-                self._vertices[from_vertex.key] = from_vertex
+-            if not self._vertices.has_key(to_vertex.key):
+-                self._vertices[to_vertex.key] = to_vertex
+-            # Add to adjacency list.
+-            self._adjacency_list.setdefault(from_vertex.key,
+-                []).append(to_vertex)
+-            # For a undirected edge, add the vertex to the adjancency list.
+-            if not edge.directed:
+-                self._adjacency_list.setdefault(to_vertex.key, []).append(
+-                    from_vertex)
+-
+-    def vertices(self):
+-        """
+-        Returns:
+-            {str: GraphNode}
+-        """
+-        nodes = []
+-        for key, value in self._vertices.iteritems():
+-            nodes.append(value)
+-        return nodes
+-
+-    def neighbors(self, source_vertex):
+-        """
+-        source_vertex(str): source vertex key.
+-        Returns:
+-            [GraphNode]
+-        """
+-        if self._adjacency_list.has_key('source_vertex'):
+-            return self._adjacency_list[source_vertex]
+-        else:
+-            return []
+-
+-    def print_vertices(self):
+-        """
+-        Util function to print vertices.
+-        """
+-        for vertex in self._vertices:
+-            print "vertex: {0}\n".format(vertex)
+-
+-    def print_edges(self):
+-        """
+-        Util function to print edges.
+-        """
+-        for vertex, neighbors in self._adjacency_list.iteritems():
+-            for neighbor in neighbors:
+-                #print "neighbor key:", neighbor.key
+-                edge = Edge(from_vertex=vertex,
+-                            to_vertex=neighbor.key)
+-                print "Edge: ", edge
+diff --git a/graphs/utils/graph_utils.py b/graphs/utils/graph_utils.py
+index da5c2f8..ca6be2b 100644
+--- a/graphs/utils/graph_utils.py
++++ b/graphs/utils/graph_utils.py
+@@ -1,7 +1,116 @@
+-from graphs.utils.graph_defs import *
++class GraphNode(object):
++    def __init__(self, key, val=None):
++        self._key = key
++        self._val = val
+ 
+-class GraphUtils(object):
+-    @staticmethod
+-    def dfs_basic(self, Graph, source, target):
+-        pass
++    @property
++    def key(self):
++        return self._key
+ 
++    @property
++    def val(self):
++        return self._val
++
++    def __hash__(self):
++        return hash(self._key)
++
++    def __str__(self):
++        return "".join(["(", self._key, ",", self._val, ")"])
++
++class Edge(object):
++    def __init__(self, from_vertex=None, to_vertex=None, is_directed=False):
++        self._is_directed = is_directed
++        self._from_vertex = from_vertex
++        self._to_vertex = to_vertex
++
++    @property
++    def from_vertex(self):
++        return self._from_vertex
++
++    @property
++    def to_vertex(self):
++        return self._to_vertex
++
++    @property
++    def directed(self):
++        return self._is_directed
++
++    def __str__(self):
++        return "".join(["(", self._from_vertex, ",", self._to_vertex, ")"])
++
++class Graph(object):
++    def __init__(self, edges):
++        self._vertices = {}
++        # Map of vertex key to list of vertex nodes.
++        self._adjacency_list = {}
++        """
++        List of Edge objects.
++        """
++        for edge in edges:
++            from_vertex = GraphNode(edge.from_vertex)
++            to_vertex = GraphNode(edge.to_vertex)
++            if not self._vertices.has_key(from_vertex.key):
++                self._vertices[from_vertex.key] = from_vertex
++            if not self._vertices.has_key(to_vertex.key):
++                self._vertices[to_vertex.key] = to_vertex
++            # Add to adjacency list.
++            self._adjacency_list.setdefault(from_vertex.key,
++                []).append(to_vertex)
++            # For a undirected edge, add the vertex to the adjancency list.
++            if not edge.directed:
++                self._adjacency_list.setdefault(to_vertex.key, []).append(
++                    from_vertex)
++
++    def vertices(self):
++        """
++        Returns:
++            {str: GraphNode}
++        """
++        nodes = []
++        for key, value in self._vertices.iteritems():
++            nodes.append(value)
++        return nodes
++
++    def neighbors(self, source_vertex):
++        """
++        source_vertex(str): source vertex key.
++        Returns:
++            [GraphNode]
++        """
++        if self._adjacency_list.has_key(source_vertex):
++            return self._adjacency_list[source_vertex]
++        else:
++            return []
++
++    def print_vertices(self):
++        """
++        Util function to print vertices.
++        """
++        for vertex in self._vertices:
++            print "vertex: {0}\n".format(vertex)
++
++    def print_edges(self):
++        """
++        Util function to print edges.
++        """
++        for vertex, neighbors in self._adjacency_list.iteritems():
++            for neighbor in neighbors:
++                edge = Edge(from_vertex=vertex,
++                            to_vertex=neighbor.key)
++                print "Edge: ", edge
++
++    def dfs_basic(self, source_vertex):
++        """
++        Util function to traverse the graph using Depth First
++        Search.
++        """
++        print "DFS:\n"
++        self._visited = {}
++        self._dfs_internal(source_vertex)
++
++    def _dfs_internal(self, source_vertex):
++        self._visited[source_vertex] = True
++        print source_vertex, "\n"
++        for neighbor in self.neighbors(source_vertex):
++            if neighbor.key not in self._visited:
++                self._dfs_internal(neighbor.key)
+-- 
+2.14.3 (Apple Git-98)
+
