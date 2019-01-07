@@ -1,6 +1,8 @@
 // Example program
 #include <iostream>
 #include <string>
+#include <queue>
+
 using namespace std;
 
 typedef struct node {
@@ -38,6 +40,42 @@ void Tree2List(Node* root, Node** head) {
     Tree2List(root->left, head);
 }
 
+void list2tree(Node* head, Node* &root) {
+
+    if (!head) {
+        root = NULL;
+        return;
+    }
+
+
+    root = head;
+    head = head->right;
+    root->right = NULL;
+    queue<Node*> q;
+    q.push(root);
+    while (!q.empty()) {
+        Node *parent = q.front();
+        q.pop();
+        if (head) {
+            Node *leftChild = head;
+            head = head->right;
+            leftChild->right = NULL;
+            leftChild->left = NULL;
+            parent->left = leftChild;
+            q.push(leftChild);
+
+            if (head) {
+                Node *rtChild = head;
+                head = head->right;
+                rtChild->right = NULL;
+                rtChild->left = NULL;
+                parent->right = rtChild;
+                q.push(rtChild);
+            }
+        }
+    }
+}
+
 void printlist(Node* head) {
     while (head) {
         cout << head->val << " ";
@@ -60,5 +98,10 @@ int main()
     Node *head = NULL;
     Tree2List(root, &head);
     printlist(head);
+
+    cout << "\n";
+    Node *root1;
+    list2tree(head, root1);
+    printtree(root1);
     return 0;
 }
